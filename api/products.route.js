@@ -1,9 +1,8 @@
 import express from 'express'
+import ProductsCtrl from '../Controller/products.controller.js'
 
 const router = express.Router()
 
-router.route('/').get((req, res) =>{
-    res.send("Hello")
-})
+router.route('/').get(ProductsCtrl.apiGetProducts)
 
 export default router
