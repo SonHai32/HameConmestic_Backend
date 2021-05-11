@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Backend for HameComestic Angular webpage",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "server run !!!"
+    "test": ""
   },
   "repository": {
     "type": "git",
