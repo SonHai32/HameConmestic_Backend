@@ -1,3 +1,4 @@
+import e from 'express'
 import ProductsDAO from '../DAO/productsDAO.js'
 
 export default class ProductsCtrl{
@@ -10,9 +11,11 @@ export default class ProductsCtrl{
         if(req.query.product_name){
             filter["product_name"] = req.query.product_name
         }else if(req.query.product_cat){
-            filter["product_cat"] = req.query.product_name
+            filter["product_cat"] = req.query.product_cat
         }else if(req.query.product_price){
             filter["product_price"] = req.query.product_price
+        }else if(req.query.id){
+            filter["id"] = req.query.id
         }
 
         const {productsList, totalNumProducts} = await ProductsDAO.getProducts({filter, page, productsPerPage}) 

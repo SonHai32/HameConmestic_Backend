@@ -20,11 +20,13 @@ export default class ProductsDAO{
         let mongodbQuery
         if(filter){
             if('product_name' in filter){
-                mongodbQuery = {$text: {$search: filter['product_name']}}
+                mongodbQuery = {$text: {$search: filter['product_name']}} 
             }else if("product_cat" in filter){
                 mongodbQuery = {$or: [{"product_cat.cat_id": filter['product_cat']}, {"product_cat.parent_cat.cat_id": filter['product_cat']}]}
             }else if("product_price" in filter){
                 mongodbQuery = {"product_price": {$eq: filter['product_price']}}
+            }else if('id' in filter){
+                mongodbQuery = {"id": {$eq: parseInt(filter['id'], 10)}}
             }
 
         }
