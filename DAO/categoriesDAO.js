@@ -11,12 +11,22 @@ export default class CategoriesDAO{
     }
 
     static async getAllCategories(){
-        let cursor
         try{
-            cursor = categories.find({})
+            let cursor = await categories.find({})
+            return cursor.toArray()
         }catch(err){
+            console.log(err);
         }
 
-        return cursor.toArray();
+    }
+    
+    static async searchCategory(categoryID){
+        try{
+            let cursor = await categories.find({$or: [{'cat_id': categoryID}, {'cat_child.cat_id': categoryID}]})
+            return cursor.toArray()
+        }catch(err){
+            console.log(err);
+        }
+
     }
 }
