@@ -1,5 +1,4 @@
 import UserDAO from "../DAO/usersDAO.js";
-
 export default class UserCtrl{
     static async apiPushUser(req, res, next){
         try {
@@ -11,10 +10,18 @@ export default class UserCtrl{
             }
            let result = await UserDAO.pushUser(userInfo) 
            res.json(result)
-           console.log(result)
         } catch (error) {
            res.json(error)
            console.log(error) 
+        }
+    }
+
+    static async apiLogin(req, res, next){
+        try {
+            const userLoginedInfo = await UserDAO.userLogin({username: req.query.username || req.body['username'], password: req.query.password || req.body['password']})
+            res.json(userLoginedInfo)
+        } catch (err) {
+            res.json(err)   
         }
     }
 }

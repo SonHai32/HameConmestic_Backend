@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import e from "express";
 
 let USERS;
 
@@ -24,7 +25,7 @@ export default class UserDAO {
 
   static async pushUser(userInfo) {
     try {
-      let user = await this.findUser(userInfo.username);
+      let user = await this.findUserByUserName(userInfo.username);
       if (user.length <= 0) {
         let errors = this.checkValid(userInfo);
         if (errors.length === 0) {
@@ -52,12 +53,12 @@ export default class UserDAO {
             ...userInfo,
           };
         }
-      }else{
-          return {
-            success: false,
-            message: "create Fail: USER EXISTED",
-            ...userInfo,
-          };
+      } else {
+        return {
+          success: false,
+          message: "create Fail: USER EXISTED",
+          ...userInfo,
+        };
       }
     } catch (err) {
       return {
@@ -68,7 +69,7 @@ export default class UserDAO {
     }
   }
 
-  static async findUser(username) {
+  static async findUserByUserName(username) {
     try {
       const user = await USERS.find({ username: username });
       return user.toArray();
@@ -110,5 +111,41 @@ export default class UserDAO {
       errors.push(ERROR_MESSAGE_TYPE.emailError);
     }
     return errors;
+  }
+
+  static async userLogin(user) {
+    const { username, password } = user;
+    let findUser = await this.findUserByUserName(username);
+    if (findUser.length > 0) {
+      const compareHashPassword = () => {
+        return new Promise((reslove, reject) => {
+          bcrypt.compare(password, findUser[0].password, (err, result) => {
+            if (!err) {
+              reslove(result);
+            } else {
+              reject(err);
+            }
+          });
+        });
+      };
+
+      return compareHashPassword()
+        .then((passwordValid) => {
+          if (passwordValid) {
+            const { username, _id, phoneNumber, emailAddress } = findUser[0];
+            return {success: true, message: 'LOGINED', username, _id, phoneNumber, emailAddress };
+          } else {
+            return { success: false, message: "WRONG PASSWORD"};
+          }
+        })
+        .catch((err) => {
+          return { success: false, message: `ERROR: ${err}` };
+        });
+    } else {
+      return {
+          success: false, 
+          message: "USER NOT FOUND" 
+        };
+    }
   }
 }
