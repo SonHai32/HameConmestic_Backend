@@ -25,10 +25,13 @@ export default class UserDAO {
 
   static async pushUser(userInfo) {
     try {
-      let user = await this.findUserByUserName(userInfo.username);
-      if (user.length <= 0) {
-        let errors = this.checkValid(userInfo);
-        if (errors.length === 0) {
+      let errors = this.checkValid(userInfo);
+      if (errors.length === 0) {
+        let userExisted = await this.userExisted(
+          userInfo.username,
+          userInfo.emailAddress
+        );
+        if (!userExisted) {
           const passwordHash = new Promise((reslove, reject) => {
             bcrypt.hash(userInfo.password, 10, async (err, hash) => {
               if (!err) {
@@ -44,19 +47,26 @@ export default class UserDAO {
               ...userInfo,
               password: passwordHash,
             });
-            return result;
+            const { username, phoneNumber, emailAddress, _id } =
+              result["ops"][0];
+            return {
+              success: true,
+              message: "Tạo tài khoản thành công",
+              userInfo: { username, phoneNumber, emailAddress, _id },
+            };
           });
         } else {
           return {
             success: false,
-            message: "create Fail: " + errors.toString(),
-            ...userInfo,
+            message:
+              "Đăng ký thất bại: Tên người dùng hoặc email đã có người sử dụng",
+              ...userInfo
           };
         }
       } else {
         return {
           success: false,
-          message: "create Fail: USER EXISTED",
+          message: "create Fail: " + errors.toString(),
           ...userInfo,
         };
       }
@@ -71,10 +81,67 @@ export default class UserDAO {
 
   static async findUserByUserName(username) {
     try {
-      const user = await USERS.find({ username: username });
-      return user.toArray();
+      const cursor = await USERS.find({ username: username });
+      const users = await cursor.toArray();
+      return users;
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  static async userExisted(username, emailAddress) {
+    try {
+      const cursor = await USERS.find({
+        $or: [{ username: username }, { emailAddress: emailAddress }],
+      });
+
+      const users = await cursor.toArray();
+      if (users.length > 0) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  static async userLogin(user) {
+    const { username, password } = user;
+    let findUser = await this.findUserByUserName(username);
+    if (findUser.length > 0) {
+      const compareHashPassword = () => {
+        return new Promise((reslove, reject) => {
+          bcrypt.compare(password, findUser[0].password, (err, result) => {
+            if (!err) {
+              reslove(result);
+            } else {
+              reject(err);
+            }
+          });
+        });
+      };
+
+      return compareHashPassword()
+        .then((passwordValid) => {
+          if (passwordValid) {
+            const { username, _id, phoneNumber, emailAddress } = findUser[0];
+            return {
+              success: true,
+              message: "LOGINED",
+              userInfo: { username, _id, phoneNumber, emailAddress },
+            };
+          } else {
+            return { success: false, message: "Mật khẩu sai rồi @_@ " };
+          }
+        })
+        .catch((err) => {
+          return { success: false, message: `ERROR: ${err}` };
+        });
+    } else {
+      return {
+        success: false,
+        message: "Người dùng không tồn tại @_@",
+      };
     }
   }
   static checkValid(userInfo) {
@@ -111,41 +178,5 @@ export default class UserDAO {
       errors.push(ERROR_MESSAGE_TYPE.emailError);
     }
     return errors;
-  }
-
-  static async userLogin(user) {
-    const { username, password } = user;
-    let findUser = await this.findUserByUserName(username);
-    if (findUser.length > 0) {
-      const compareHashPassword = () => {
-        return new Promise((reslove, reject) => {
-          bcrypt.compare(password, findUser[0].password, (err, result) => {
-            if (!err) {
-              reslove(result);
-            } else {
-              reject(err);
-            }
-          });
-        });
-      };
-
-      return compareHashPassword()
-        .then((passwordValid) => {
-          if (passwordValid) {
-            const { username, _id, phoneNumber, emailAddress } = findUser[0];
-            return {success: true, message: 'LOGINED', username, _id, phoneNumber, emailAddress };
-          } else {
-            return { success: false, message: "WRONG PASSWORD"};
-          }
-        })
-        .catch((err) => {
-          return { success: false, message: `ERROR: ${err}` };
-        });
-    } else {
-      return {
-          success: false, 
-          message: "USER NOT FOUND" 
-        };
-    }
   }
 }
