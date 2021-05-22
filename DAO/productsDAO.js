@@ -1,3 +1,5 @@
+import mongodb from 'mongodb'
+const ObjectId = mongodb.ObjectId
 let products
 
 export default class ProductsDAO {
@@ -6,7 +8,7 @@ export default class ProductsDAO {
             return
         }
         try {
-            products = await myConnection.db(process.env.DB_NAME).collection('products')
+            products = await myConnection.db(process.env.DB_NAME).collection('data2')
         } catch (err) {
             console.error(`Khon the lay du lieu products: ${err}`)
         }
@@ -26,7 +28,7 @@ export default class ProductsDAO {
             } else if ("product_price" in filter) {
                 mongodbQuery = { "product_price": { $eq: filter['product_price'] } }
             } else if ('id' in filter) {
-                mongodbQuery = { "id": { $eq: parseInt(filter['id'], 10) } }
+                mongodbQuery = { "_id": new ObjectId(filter['id']) }
             }
 
         }
